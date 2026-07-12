@@ -20,7 +20,7 @@ import SegregationReport from "./SegregationReport.jsx";
 import { calculateFinancials } from "./financial.js";
 import SuccessDashboard from "./SuccessDashboard.jsx";
 import HistoryAnalytics from "./HistoryAnalytics.jsx";
-import { saveHistoryEntry, getHistory } from "./historyStore.js";
+import { saveHistoryEntry, getHistory } from "./historystore.js";
 
 // Original steps - kept exactly as before. New steps are handled separately
 // via dedicated state so none of this original logic is modified.
