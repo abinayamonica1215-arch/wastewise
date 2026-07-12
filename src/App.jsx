@@ -3,7 +3,7 @@ import { predictWasteComposition } from "./wastelogic.js";
 import { recommendProcessing } from "./wasteRecommend.js";
 import { calculateWasteToWealth } from "./wastevalue.js";
 import { recalibrate, loadCalibration } from "./wastecalibration.js";
-import { detectSeason } from "./weatherSeason.js";
+import { detectSeason } from "./weatherseason.js";
 import { findNearbyFacilities, directionsUrl } from "./nearbyFacilities.js";
 import "./App.css";
 
