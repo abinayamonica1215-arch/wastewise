@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { predictWasteComposition } from "./wastelogic.js";
 import { recommendProcessing } from "./wasteRecommend.js";
 import { calculateWasteToWealth } from "./wastevalue.js";
-import { recalibrate, loadCalibration } from "./wasteCalibration.js";
+import { recalibrate, loadCalibration } from "./wastecalibration.js";
 import { detectSeason } from "./weatherSeason.js";
 import { findNearbyFacilities, directionsUrl } from "./nearbyFacilities.js";
 import "./App.css";
