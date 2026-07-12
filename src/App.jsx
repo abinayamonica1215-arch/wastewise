@@ -14,7 +14,7 @@ import Register from "./register.jsx";
 import IndustryDetailsForm from "./industrydetailform.jsx";
 import { enrichFacilities } from "./facilityEnrichment.js";
 import NearbyCenters from "./nearbycenters.jsx";
-import DeliveryConfirmation from "./DeliveryConfirmation.jsx";
+import DeliveryConfirmation from "./deliveryconfirmation.jsx";
 import { generateActualSegregation } from "./segregation.js";
 import SegregationReport from "./SegregationReport.jsx";
 import { calculateFinancials } from "./financial.js";
