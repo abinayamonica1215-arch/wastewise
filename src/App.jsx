@@ -1,3 +1,11 @@
+import {
+  FaRecycle,
+  FaLeaf,
+  FaMapMarkerAlt,
+  FaIndustry,
+  FaMoneyBillWave,
+  FaMoneyBill
+} from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { predictWasteComposition } from "./wastelogic.js";
 import { recommendProcessing } from "./wasteRecommend.js";
@@ -22,6 +30,13 @@ import SuccessDashboard from "./SuccessDashboard.jsx";
 import HistoryAnalytics from "./HistoryAnalytics.jsx";
 import { saveHistoryEntry, getHistory } from "./historystore.js";
 
+// --- Newest feature imports: nav, hero, relocated audit, details view ---
+import "./interactive.css";
+import HamburgerMenu from "./hamburgermenu.jsx";
+import RecycleHero from "./recyclehero.jsx";
+import AuditStep from "./auditstep.jsx";
+import MyDetailsView from "./mydetailsview.jsx";
+
 // Original steps - kept exactly as before. New steps are handled separately
 // via dedicated state so none of this original logic is modified.
 const STEPS = ["form", "composition", "facility", "routing", "wealth", "nearby"];
@@ -34,7 +49,7 @@ function App() {
   const [detailsCollected, setDetailsCollected] = useState(false);
 
   // --- New: post-analysis flow state ---
-  const [phase, setPhase] = useState("analysis"); // "analysis" | "selectCenter" | "delivered" | "segregation" | "success" | "history"
+  const [phase, setPhase] = useState("analysis"); // "analysis" | "selectCenter" | "audit" | "delivered" | "segregation" | "success" | "history" | "details"
   const [enrichedNearby, setEnrichedNearby] = useState([]);
   const [selectedCenter, setSelectedCenter] = useState(null);
   const [actualSegregation, setActualSegregation] = useState(null);
@@ -52,11 +67,6 @@ function App() {
   const [result, setResult] = useState(null);
   const [nearby, setNearby] = useState([]);
   const [primaryFacility, setPrimaryFacility] = useState(null);
-
-  const [showAudit, setShowAudit] = useState(false);
-  const [auditOrganic, setAuditOrganic] = useState("");
-  const [auditRecyclable, setAuditRecyclable] = useState("");
-  const [auditInert, setAuditInert] = useState("");
 
   useEffect(() => {
     detectSeason().then((s) => setSeason(s));
@@ -105,21 +115,6 @@ function App() {
     setStep("composition");
   }
 
-  // --- Original function, untouched ---
-  function handleAuditSubmit() {
-    const actual = {
-      organic: Number(auditOrganic),
-      recyclable: Number(auditRecyclable),
-      inert: Number(auditInert),
-    };
-    recalibrate(areaType, actual);
-    setAuditOrganic("");
-    setAuditRecyclable("");
-    setAuditInert("");
-    setShowAudit(false);
-    handlePredict();
-  }
-
   // --- Original functions, untouched ---
   function goNext() {
     const idx = STEPS.indexOf(step);
@@ -161,7 +156,18 @@ function App() {
 
   function handleSelectCenter(facility) {
     setSelectedCenter(facility);
-    setPhase("delivered");
+    // New: go to the audit step first, showing this facility's kg split,
+    // before moving on to delivery confirmation.
+    setPhase("audit");
+  }
+
+  // New: handles the relocated audit form's submission. Recalibrates the
+  // underlying model the same way the original handleAuditSubmit did, but
+  // no longer resets the in-progress flow back to the composition step —
+  // the person is already deep in this run, so they simply continue on to
+  // delivery via the AuditStep's "Continue" button.
+  function handleAuditSubmit(actual) {
+    recalibrate(areaType, actual);
   }
 
   function handleMarkDelivered() {
@@ -192,12 +198,45 @@ function App() {
     startOver();
   }
 
+  // --- New: hamburger nav handler ---
+  function handleNavigate(key) {
+    switch (key) {
+      case "home":
+        setPhase("analysis");
+        setStep("form");
+        break;
+      case "details":
+        setPhase("details");
+        break;
+      case "newAnalysis":
+        startOver();
+        break;
+      case "centers":
+        setPhase("selectCenter");
+        break;
+      case "history":
+        setPhase("history");
+        break;
+      default:
+        break;
+    }
+  }
+
+  // New: which menu item to highlight, derived from existing phase state
+  const activeNavView =
+    phase === "selectCenter" ? "centers" :
+    phase === "history" ? "history" :
+    phase === "details" ? "details" :
+    phase === "analysis" ? "home" :
+    null;
+
   // --- Gating: Login / Register ---
   if (!currentUser) {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <h1> <FaRecycle/>WasteWise</h1>
         <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
+        <RecycleHero />
         {authView === "login" ? (
           <Login
             onLoginSuccess={handleLoginSuccess}
@@ -217,7 +256,8 @@ function App() {
   if (currentUser.role === "Industry/Institution" && !detailsCollected) {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1><FaRecycle/>WasteWise</h1>
         <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
         <IndustryDetailsForm onSubmit={handleIndustryDetailsSubmit} />
       </div>
@@ -228,12 +268,22 @@ function App() {
   if (currentUser.role === "Municipality/Admin") {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1> <FaRecycle/>WasteWise</h1>
         <p className="subtitle">Municipality / Admin Dashboard</p>
-        <div className="page-nav">
-          <button onClick={handleLogout}>Logout</button>
-        </div>
         <HistoryAnalytics history={history} onStartOver={handleLogout} />
+      </div>
+    );
+  }
+
+  // --- New: "My Details" view, reached from the hamburger menu ---
+  if (phase === "details") {
+    return (
+      <div className="app">
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1><FaRecycle/>WasteWise</h1>
+        <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
+        <MyDetailsView details={industryDetails} onBack={() => handleNavigate("home")} />
       </div>
     );
   }
@@ -242,7 +292,8 @@ function App() {
   if (phase === "selectCenter") {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1> <FaRecycle/>WasteWise</h1>
         <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
         <NearbyCenters
           facilities={enrichedNearby}
@@ -253,15 +304,36 @@ function App() {
     );
   }
 
+  // New: relocated audit step — shows the selected MRF's predicted kg split
+  // first, then the audit form to compare actual figures against it.
+  if (phase === "audit" && result) {
+    return (
+      <div className="app">
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1><FaRecycle/>WasteWise</h1>
+        <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
+        <AuditStep
+          facility={selectedCenter}
+          composition={result.composition}
+          totalWasteKg={totalWasteKg}
+          onSubmitAudit={handleAuditSubmit}
+          onContinue={() => setPhase("delivered")}
+          onBack={() => setPhase("selectCenter")}
+        />
+      </div>
+    );
+  }
+
   if (phase === "delivered") {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1> <FaRecycle/>WasteWise</h1>
         <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
         <DeliveryConfirmation
           facility={selectedCenter}
           onMarkDelivered={handleMarkDelivered}
-          onBack={() => setPhase("selectCenter")}
+          onBack={() => setPhase("audit")}
         />
       </div>
     );
@@ -270,7 +342,8 @@ function App() {
   if (phase === "segregation" && actualSegregation) {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1><FaRecycle/>WasteWise</h1>
         <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
         <SegregationReport
           segregation={actualSegregation}
@@ -284,7 +357,8 @@ function App() {
   if (phase === "success" && financials) {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1><FaRecycle/>WasteWise</h1>
         <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
         <SuccessDashboard
           financials={financials}
@@ -298,17 +372,23 @@ function App() {
   if (phase === "history") {
     return (
       <div className="app">
-        <h1>WasteWise</h1>
+        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+        <h1><FaRecycle/>WasteWise</h1>
         <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
         <HistoryAnalytics history={history} onStartOver={handleStartOverFull} />
       </div>
     );
   }
 
-  // --- Original render tree, completely untouched below ---
+  // --- Original render tree, preserved below. Only change: the old inline
+  // audit block that used to live in the "nearby" step has been removed,
+  // since auditing now happens in its own "audit" phase right after MRF
+  // selection (see above). Everything else here — including your react-icons
+  // — is untouched. ---
   return (
     <div className="app">
-      <h1>WasteWise</h1>
+      <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
+      <h1><FaRecycle/>WasteWise</h1>
       <p className="subtitle">Smart Waste-to-Wealth Prediction System</p>
 
       {step === "form" && (
@@ -357,7 +437,7 @@ function App() {
 
       {step === "composition" && result && (
         <div className="page">
-          <h2>Predicted Waste Composition</h2>
+          <h2><FaLeaf/> Predicted Waste Composition</h2>
           <ul className="big-list">
             <li>Organic: <strong>{result.composition.organic}%</strong></li>
             <li>Recyclable: <strong>{result.composition.recyclable}%</strong></li>
@@ -372,7 +452,7 @@ function App() {
 
       {step === "facility" && result && (
         <div className="page">
-          <h2>Recommended Pathway</h2>
+          <h2><FaIndustry/> Recommended Pathway</h2>
           <p><strong>{result.recommendation.pathway}</strong></p>
           <p>{result.recommendation.reason}</p>
 
@@ -382,8 +462,8 @@ function App() {
               <p>📍 {primaryFacility.address}</p>
               <p>📞 {primaryFacility.phone}</p>
               <p>{primaryFacility.distanceKm} km away</p>
-              <a
               
+              <a
                 className="map-link"
                 href={directionsUrl(primaryFacility.lat, primaryFacility.lon)}
                 target="_blank"
@@ -420,7 +500,7 @@ function App() {
 
       {step === "wealth" && result && (
         <div className="page">
-          <h2>Waste-to-Wealth Estimate</h2>
+          <h2><FaMoneyBillWave/> Waste-to-Wealth Estimate</h2>
           <ul className="big-list">
             {result.wealth.compostKg > 0 && <li>Compost produced: {result.wealth.compostKg} kg</li>}
             {result.wealth.biogasM3 > 0 && <li>Biogas generated: {result.wealth.biogasM3} m³</li>}
@@ -437,7 +517,7 @@ function App() {
 
       {step === "nearby" && (
         <div className="page">
-          <h2>Places You Can Earn From This Waste</h2>
+          <h2><FaMapMarkerAlt/> Places You Can Earn From This Waste</h2>
           {nearby.length > 0 ? (
             <div className="facility-list">
               {nearby.map((f) => (
@@ -461,36 +541,9 @@ function App() {
             <p>No nearby facilities found.</p>
           )}
 
-          <button onClick={() => setShowAudit(!showAudit)}>
-            {showAudit ? "Cancel" : "Enter real audit data"}
-          </button>
-
-          {showAudit && (
-            <div className="audit-form">
-              <h3>Enter Actual Composition (%)</h3>
-              <input
-                type="number"
-                placeholder="Organic %"
-                value={auditOrganic}
-                onChange={(e) => setAuditOrganic(e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Recyclable %"
-                value={auditRecyclable}
-                onChange={(e) => setAuditRecyclable(e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Inert %"
-                value={auditInert}
-                onChange={(e) => setAuditInert(e.target.value)}
-              />
-              <button onClick={handleAuditSubmit}>Submit & Recalibrate</button>
-            </div>
-          )}
-
-          {/* New: proceed into the processing-center selection flow */}
+          {/* New: proceed into the processing-center selection flow.
+              (Audit now happens in its own step after a center is picked —
+              see the "audit" phase above.) */}
           <div className="page-nav">
             <button onClick={() => setPhase("selectCenter")}>
               Proceed to Select Processing Center →
