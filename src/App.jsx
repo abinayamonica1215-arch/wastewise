@@ -264,18 +264,6 @@ function App() {
     );
   }
 
-  // --- Municipality/Admin: goes straight to history/analytics dashboard ---
-  if (currentUser.role === "Municipality/Admin") {
-    return (
-      <div className="app">
-        <HamburgerMenu activeView={activeNavView} onNavigate={handleNavigate} onLogout={handleLogout} />
-        <h1> <FaRecycle/>WasteWise</h1>
-        <p className="subtitle">Municipality / Admin Dashboard</p>
-        <HistoryAnalytics history={history} onStartOver={handleLogout} />
-      </div>
-    );
-  }
-
   // --- New: "My Details" view, reached from the hamburger menu ---
   if (phase === "details") {
     return (

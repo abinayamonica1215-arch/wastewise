@@ -310,3 +310,36 @@ h1, h2, h3, h4,
   border-color: var(--ww-green-500);
   box-shadow: 0 0 0 3px rgba(34, 163, 90, 0.15);
 }
+/* =========================================================
+   Mobile safety net — prevents any new element from forcing
+   horizontal overflow (which triggers the "zoomed out" look
+   on phones even with a correct viewport tag).
+   ========================================================= */
+@media (max-width: 480px) {
+  .ww-kg-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .ww-recycle-hero-wrap {
+    width: 96px;
+    height: 96px;
+  }
+
+  .ww-recycle-hero-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .ww-navbar {
+    top: 12px;
+    right: 12px;
+  }
+}
+
+.ww-btn-gradient,
+.ww-card-hover,
+.ww-audit-form,
+.ww-kg-tile {
+  max-width: 100%;
+  box-sizing: border-box;
+}

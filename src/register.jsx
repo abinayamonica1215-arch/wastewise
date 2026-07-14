@@ -31,7 +31,6 @@ function Register({ onRegisterSuccess, onGoToLogin }) {
           Role
           <select value={role} onChange={(e) => setRole(e.target.value)}>
             <option>Industry/Institution</option>
-            <option>Municipality/Admin</option>
           </select>
         </label>
         <label>
